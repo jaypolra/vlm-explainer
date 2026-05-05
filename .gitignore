@@ -1,13 +1,13 @@
 # Python
 __pycache__/
-*.pyc
-*.pyo
-*.pyd
+*.py[cod]
 *.egg-info/
 dist/
 build/
+.pytest_cache/
+.mypy_cache/
 
-# Envs
+# Environments
 .venv/
 venv/
 env/
@@ -15,20 +15,34 @@ ENV/
 *.conda
 .ipynb_checkpoints/
 
-# Streamlit
+# Streamlit local state
 .streamlit/
 
-# OS
-.DS_Store
-Thumbs.db
-
-# Outputs
+# Generated outputs
+outputs/
+exports/
+artifacts/
 *.mp4
 *.gif
-*.png
-*.jpg
-*.jpeg
 *.log
+
+# Local model/cache artifacts
+models_cache/
+.cache/
+*.safetensors
+*.bin
+*.pt
+*.pth
+
+# Keep committed media assets available for the README
+!media/
+!media/**
+
+# OS and editor files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
 
 # Temp
 tmp/
