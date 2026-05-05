@@ -1,67 +1,118 @@
-# VLM Explainer (BLIP + CLIP)
+# VLM Explainer: From Patches to Phrases
 
-**From Patches to Phrases** — An interactive Streamlit application for interpreting  
-how **Vision–Language Models (VLMs) look and talk**.
+VLM Explainer is an interactive Streamlit application for interpreting why pretrained vision-language models generate specific caption words for an image.
 
-This project focuses on **explainability**, not training.  
-We analyze *why* pretrained VLMs generate specific words or align images with text.
+The project uses BLIP for image captioning and token-level visual explanations, then uses CLIP as a separate image-text alignment check. It focuses on model interpretation and analysis, not training a new VLM from scratch.
 
----
+![VLM Explainer workflow](media/vlm-explainer-workflow.svg)
 
-##  What This App Does
+## Core Idea
 
-### BLIP — Captioning & Explainability
-- Token-level **Grad-CAM**
-- Vision-layer selection (shallow → deep)
-- Manual region masking  
-  - 2-click rectangle + confirm
-- Vision-layer evolution visualization
+A vision-language model can generate a fluent caption such as `a family walking along the beach with their dog`, but the model's reasoning is usually opaque. This app makes the captioning process more inspectable by connecting generated words back to visual regions and testing whether removing those regions changes the caption.
 
-### CLIP — Verification & Alignment
-- Image–text similarity scoring
-- Grad-CAM for alignment verification
-- Used as a **sanity-check model**, not for captioning
+## Features
 
----
+- Generate image captions with `Salesforce/blip-image-captioning-base`.
+- Select individual caption tokens and compute token-level BLIP Grad-CAM heatmaps.
+- Choose shallow-to-deep BLIP vision layers to inspect representation changes.
+- Map pixels to BLIP's patch grid for region-level analysis.
+- Manually select image regions with a 2-click rectangle interaction.
+- Mask selected regions and regenerate captions to test causal behavior.
+- Compute CLIP image-text similarity for the generated or edited caption.
+- Generate CLIP Grad-CAM heatmaps as an alignment sanity check.
+- Build a BLIP layer-evolution video showing how heatmaps change across layers.
 
-## Key Idea
+## Example Explanation Workflow
 
-- **BLIP explains** *what the model says* and *why*
-- **CLIP verifies** whether the image truly matches the text
+1. Upload an image.
+2. BLIP generates a caption.
+3. Select a generated token such as `dog`.
+4. Generate a BLIP Grad-CAM heatmap for that token.
+5. Check whether the heatmap activates over the dog region.
+6. Mask the dog region using the rectangle selector.
+7. Regenerate the caption and observe whether the dog concept disappears.
+8. Use CLIP similarity and CLIP Grad-CAM to verify image-text alignment.
 
-Together, they enable **causal analysis** of vision–language grounding.
+In the beach example, selecting the token `dog` highlighted the dog region. When that region was masked, BLIP changed the caption to remove the dog concept. Masking the child region similarly changed the generated caption by removing the child/family concept. This shows the heatmaps are not just decorative overlays; the highlighted regions affect the generated language.
 
----
+## Repository Structure
 
-##  Setup
+```text
+vlm-explainer/
+|-- app.py                     # Streamlit interface and interaction flow
+|-- models/
+|   |-- blip_explainer.py       # BLIP captioning, token Grad-CAM, vision-layer hooks
+|   `-- clip_explainer.py       # CLIP similarity and Grad-CAM verification
+|-- utils/
+|   |-- image_utils.py          # Heatmap overlays and image utilities
+|   |-- patch_utils.py          # Pixel-to-patch mapping and masking helpers
+|   `-- video_utils.py          # Layer-evolution frame and MP4 generation
+|-- media/
+|   `-- vlm-explainer-workflow.svg
+|-- requirements.txt
+|-- runtime.txt
+`-- README.md
+```
 
-### Option A: Using `pip` (recommended)
+## Tech Stack
 
+| Area | Tools |
+|---|---|
+| App UI | Streamlit, streamlit-image-coordinates |
+| Captioning model | BLIP, `Salesforce/blip-image-captioning-base` |
+| Alignment model | CLIP, `openai/clip-vit-base-patch32` |
+| Explainability | Grad-CAM, PyTorch hooks, activations, gradients |
+| Image processing | PIL, NumPy, Matplotlib, OpenCV/imageio |
+| Model interface | Hugging Face Transformers, PyTorch |
 
-git clone https://github.com/jp2501/vlm-explainer
+## Setup
+
+```bash
+git clone https://github.com/jaypolra/vlm-explainer.git
 cd vlm-explainer
 
 python -m venv .venv
-
-# Windows
-.venv\Scripts\activate
-
-
-# source .venv/bin/activate
+source .venv/bin/activate      # macOS/Linux
+# .venv\Scripts\activate       # Windows PowerShell
 
 pip install -r requirements.txt
+```
 
-### Option B: Using Comnda
-git clone https://github.com/jp2501/vlm-explainer
+Conda alternative:
 
-cd vlm-explainer
-
-conda create -n vlm python=3.10 -y
-
-conda activate vlm
-
+```bash
+conda create -n vlm-explainer python=3.10 -y
+conda activate vlm-explainer
 pip install -r requirements.txt
+```
 
-### Run the App
+## Run the App
+
+```bash
 streamlit run app.py
+```
 
+Upload a JPG or PNG image, select a generated caption token, inspect BLIP Grad-CAM, mask a region, and compare the regenerated caption.
+
+## Design Notes
+
+- **Pretrained models only:** the project analyzes BLIP and CLIP behavior; it does not train a new captioning model.
+- **Token-level attribution:** BLIP Grad-CAM targets a selected generated token rather than only explaining the whole caption.
+- **Layer selection:** shallow and deep BLIP vision layers can be compared to see how explanations evolve.
+- **Perturbation validation:** masking tests whether an important highlighted region actually influences generated language.
+- **CLIP as verification:** CLIP provides image-text similarity and a second heatmap view, but BLIP remains the captioning model.
+
+## Limitations
+
+- Grad-CAM is an attribution method, not a complete proof of model reasoning.
+- Masking can introduce distribution shift because the edited image may look unnatural to the model.
+- Explanations depend on the selected model layer and tokenization behavior.
+- Large models may run slowly on CPU-only environments.
+
+## Future Improvements
+
+- Add side-by-side before/after caption comparison with highlighted changed words.
+- Support additional VLMs such as BLIP-2, LLaVA, or newer captioning models.
+- Add automatic top-region masking from heatmaps instead of manual rectangle selection only.
+- Save explanation reports with original image, selected token, heatmap, mask, and regenerated caption.
+- Add quantitative perturbation metrics across multiple images and tokens.
