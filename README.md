@@ -4,7 +4,7 @@ VLM Explainer is an interactive Streamlit application for interpreting why pretr
 
 The project uses BLIP for image captioning and token-level visual explanations, then uses CLIP as a separate image-text alignment check. It focuses on model interpretation and analysis, not training a new VLM from scratch.
 
-![VLM Explainer workflow](media/vlm-explainer-workflow.svg)
+![Vision-Language Models as a black box](media/blackbox.jpg)
 
 ## Core Idea
 
@@ -48,7 +48,7 @@ vlm-explainer/
 |   |-- patch_utils.py          # Pixel-to-patch mapping and masking helpers
 |   `-- video_utils.py          # Layer-evolution frame and MP4 generation
 |-- media/
-|   `-- vlm-explainer-workflow.svg
+|   `-- blackbox.jpg
 |-- requirements.txt
 |-- runtime.txt
 `-- README.md
